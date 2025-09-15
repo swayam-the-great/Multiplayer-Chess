@@ -13,4 +13,21 @@ public class King extends Piece {
             image = getImage("b-king");
         }
     }
+////// LOGIC TO MOVE KING //////
+    public boolean canMove(int targetCol, int targetRow) {
+
+        if (isWithinBoard(targetCol, targetRow)) {
+            if (Math.abs(targetCol - preCol) + Math.abs(targetRow - preRow) == 1
+                    || Math.abs(targetCol - preCol) * Math.abs(targetRow - preRow) == 1) {
+
+                        if(isValidSquare(targetCol, targetRow)){
+                            return true;
+                        }
+
+                
+            }
+        }
+        return false;
+    }
+
 }
