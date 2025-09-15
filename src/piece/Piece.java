@@ -145,7 +145,7 @@ public class Piece {
             }
         }
         //When this piece is moving to the up  
-        for(int r = preRow - 1 ; r > targetCol ; r--){
+        for(int r = preRow - 1 ; r > targetRow ; r--){
             for(Piece piece : GamePanel.simPieces){
                 if(piece.col == targetCol && piece.row == r){
                     hittingP = piece ;
@@ -155,7 +155,7 @@ public class Piece {
             }
         }
         //When this piece is moving to the down 
-        for(int r = preRow + 1 ; r < targetCol ; r++){
+        for(int r = preRow + 1 ; r < targetRow ; r++){
             for(Piece piece : GamePanel.simPieces){
                 if(piece.col == targetCol && piece.row == r){
                     hittingP = piece ;
