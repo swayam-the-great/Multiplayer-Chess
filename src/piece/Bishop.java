@@ -13,4 +13,18 @@ public class Bishop extends Piece {
             image = getImage("b-bishop");
         }
     }
+
+    public boolean canMove(int targetCol, int targetRow) {
+
+        if (isWithinBoard(targetCol, targetRow) && isSameSquare(targetCol, targetRow) == false) {
+            // Bishop can moves  Diagonally util its row and col  differenve is in ratio of 1:1
+            if (Math.abs(targetCol - preCol) == Math.abs(targetRow - preRow)) {
+                if (isValidSquare(targetCol, targetRow) && pieceIsOnDiagonalLine(targetCol, targetRow) == false) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
 }
