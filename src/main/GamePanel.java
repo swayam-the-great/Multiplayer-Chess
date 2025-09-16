@@ -141,7 +141,7 @@ public class GamePanel extends JPanel implements Runnable {
             }
         }
 
-        //  Bug Spoted 
+        //  Bug Solved 
         ///MOUSED IS PRESSED ///
         if (mouse.pressed == false) {
 
@@ -152,6 +152,7 @@ public class GamePanel extends JPanel implements Runnable {
                     //Update the piece list in a case piece is captured and removed during simulation 
                     copyPieces(simPieces, pieces);
                     activeP.updatePosition();
+                    activeP = null; // Fix: release piece after placing
                 } else {
                     // move is not valid so reset everything 
                     copyPieces(pieces, simPieces);
