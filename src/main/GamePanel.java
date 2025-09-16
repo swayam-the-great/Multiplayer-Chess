@@ -141,6 +141,7 @@ public class GamePanel extends JPanel implements Runnable {
             }
         }
 
+        //  Bug Spoted 
         ///MOUSED IS PRESSED ///
         if (mouse.pressed == false) {
 
