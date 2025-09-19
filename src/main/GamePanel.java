@@ -29,6 +29,8 @@ public class GamePanel extends JPanel implements Runnable {
 // PIECES
     public static ArrayList<Piece> pieces = new ArrayList<>();
     public static ArrayList<Piece> simPieces = new ArrayList<>();
+    ArrayList<Piece> promoPieces = new ArrayList<>();
+
     Piece activeP;
     public static Piece castlingP;
 
@@ -40,6 +42,7 @@ public class GamePanel extends JPanel implements Runnable {
 //BOOLEANS
     public boolean canMove;
     public boolean validSquare;
+    public boolean promotion;
 
     public GamePanel() {
         setPreferredSize(new Dimension(WIDTH, HEIGHT));
@@ -126,50 +129,61 @@ public class GamePanel extends JPanel implements Runnable {
     }
 
     private void update() {
-        ///MOUSE BUTTON IS PRESSED ///
-        if (mouse.pressed == true) {
-            if (activeP == null) {
-                //if active piece s null  check if you can move piece
-                for (Piece piece : simPieces) {
-                    // if mouse is on ally Piece , pick it up as activeP
-                    if (piece.color == currentColor
-                            && piece.col == mouse.x / Board.SQUARE_SIZE
-                            && piece.row == mouse.y / Board.SQUARE_SIZE) {
-                        activeP = piece;
-                    }
-                }
-            } else {
-                // if Player is holding a piece , simulate the move 
-                simulate();
-            }
-        }
 
-        //  Bug Solved 
-        ///MOUSED IS PRESSED ///
+        if (promotion) {
+            promoting();
+
+        } else {
+
+            ///MOUSE BUTTON IS PRESSED ///
+        if (mouse.pressed == true) {
+                if (activeP == null) {
+                    //if active piece s null  check if you can move piece
+                    for (Piece piece : simPieces) {
+                        // if mouse is on ally Piece , pick it up as activeP
+                        if (piece.color == currentColor
+                                && piece.col == mouse.x / Board.SQUARE_SIZE
+                                && piece.row == mouse.y / Board.SQUARE_SIZE) {
+                            activeP = piece;
+                        }
+                    }
+                } else {
+                    // if Player is holding a piece , simulate the move 
+                    simulate();
+                }
+            }
+
+            //  Bug Solved 
+            ///MOUSED IS REALEASED///
         if (mouse.pressed == false) {
 
-            if (activeP != null) {
-                if (validSquare) {
+                if (activeP != null) {
+                    if (validSquare) {
 
-                    //MOVE CONFIRMED
-                    //Update the piece list in a case piece is captured and removed during simulation 
-                    copyPieces(simPieces, pieces);
-                    activeP.updatePosition();
+                        //MOVE CONFIRMED
+                        //Update the piece list in a case piece is captured and removed during simulation 
+                        copyPieces(simPieces, pieces);
+                        activeP.updatePosition();
 
-                    if (castlingP != null) {
-                        castlingP.updatePosition();
+                        if (castlingP != null) {
+                            castlingP.updatePosition();
+                        }
+
+                        if (canPromote()) {
+                            promotion = true;
+                        } else {
+                            changePlayer();
+                        }
+
+                    } else {
+                        // move is not valid so reset everything 
+                        copyPieces(pieces, simPieces);
+
+                        activeP.resetPosition();
+                        activeP = null;
                     }
 
-                    
-                    changePlayer();
-                } else {
-                    // move is not valid so reset everything 
-                    copyPieces(pieces, simPieces);
-
-                    activeP.resetPosition();
-                    activeP = null;
                 }
-
             }
         }
 
@@ -209,8 +223,24 @@ public class GamePanel extends JPanel implements Runnable {
 
             checkCastling();
 
-            validSquare = true;
+            if (isIllegal(activeP) == false) {
+                validSquare = true;
+            }
+
         }
+    }
+
+    private boolean isIllegal(Piece king) {
+
+        if (king.type == Type.KING) {
+            for (Piece piece : simPieces) {
+                if (piece != king && piece.color != king.color && piece.canMove(king.col, king.row)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     public void checkCastling() {
@@ -225,12 +255,74 @@ public class GamePanel extends JPanel implements Runnable {
     }
 
     public void changePlayer() {
+
         if (currentColor == WHITE) {
             currentColor = BLACK;
+            //To Reset All Black  two Stepped Status
+            for (Piece piece : pieces) {
+                if (piece.color == BLACK) {
+                    piece.twoStepped = false;
+                }
+            }
+
         } else {
             currentColor = WHITE;
+            //To Reset All WHITE  two Stepped Status
+            for (Piece piece : pieces) {
+                if (piece.color == WHITE) {
+                    piece.twoStepped = false;
+                }
+            }
         }
         activeP = null;
+    }
+
+    private boolean canPromote() {
+
+        if (activeP.type == Type.PAWN) {
+            if (currentColor == WHITE && activeP.row == 0 || currentColor == BLACK && activeP.row == 7) {
+                promoPieces.clear();
+                promoPieces.add(new Rook(currentColor, 9, 2));
+                promoPieces.add(new Knight(currentColor, 9, 3));
+                promoPieces.add(new Bishop(currentColor, 9, 4));
+                promoPieces.add(new Queen(currentColor, 9, 5));
+                return true;
+
+            }
+        }
+
+        return false;
+    }
+
+    public void promoting() {
+        if (mouse.pressed) {
+            for (Piece piece : promoPieces) {
+                if (piece.col == mouse.x / Board.SQUARE_SIZE && piece.row == mouse.y / Board.SQUARE_SIZE) {
+                    switch (piece.type) {
+                        case ROOK:
+                            simPieces.add(new Rook(currentColor, activeP.col, activeP.row));
+                            break;
+                        case KNIGHT:
+                            simPieces.add(new Knight(currentColor, activeP.col, activeP.row));
+                            break;
+                        case BISHOP:
+                            simPieces.add(new Bishop(currentColor, activeP.col, activeP.row));
+                            break;
+                        case QUEEN:
+                            simPieces.add(new Queen(currentColor, activeP.col, activeP.row));
+                            break;
+                        default:
+                            break;
+                    }
+                    simPieces.remove(activeP.getIndex());
+                    copyPieces(simPieces, pieces);
+                    activeP = null;
+                    promotion = false;
+                    changePlayer();
+
+                }
+            }
+        }
     }
 
     public void paintComponent(Graphics g) {
@@ -248,10 +340,19 @@ public class GamePanel extends JPanel implements Runnable {
 
         if (activeP != null) {
             if (canMove) {
-                g2.setColor(Color.gray);
-                g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.7f));
-                g2.fillRect(activeP.col * Board.SQUARE_SIZE, activeP.row * Board.SQUARE_SIZE, Board.SQUARE_SIZE, Board.SQUARE_SIZE);
-                g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1f));
+                if (isIllegal(activeP)) {
+                    g2.setColor(Color.red);
+                    g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.7f));
+                    g2.fillRect(activeP.col * Board.SQUARE_SIZE, activeP.row * Board.SQUARE_SIZE, Board.SQUARE_SIZE, Board.SQUARE_SIZE);
+                    g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1f));
+                } 
+                else {
+                    g2.setColor(Color.gray);
+                    g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.7f));
+                    g2.fillRect(activeP.col * Board.SQUARE_SIZE, activeP.row * Board.SQUARE_SIZE, Board.SQUARE_SIZE, Board.SQUARE_SIZE);
+                    g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 1f));
+                }
+
             }
 
             //draw active piece at end so it wont be hidden 
@@ -263,10 +364,18 @@ public class GamePanel extends JPanel implements Runnable {
         g2.setFont(new Font("Book Antique", Font.PLAIN, 28));
         g2.setColor(Color.yellow);
 
-        if (currentColor == WHITE) {
-            g2.drawString("White's Turn", 720, 600);
+        if (promotion) {
+            g2.drawString("Promote to :", 740, 150);
+            for (Piece piece : promoPieces) {
+                g2.drawImage(piece.image, piece.getX(piece.col), piece.getY(piece.row),
+                        Board.SQUARE_SIZE, Board.SQUARE_SIZE, null);
+            }
         } else {
-            g2.drawString("Black's Turn", 720, 100); // keep same Y to align
+            if (currentColor == WHITE) {
+                g2.drawString("White's Turn", 720, 600);
+            } else {
+                g2.drawString("Black's Turn", 720, 100); // keep same Y to align
+            }
         }
 
     }
